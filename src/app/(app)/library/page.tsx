@@ -21,7 +21,7 @@ import { t } from '@/lib/i18n';
 
 async function Documents() {
 	await connection();
-	const documents = listDocuments();
+	const documents = await listDocuments();
 	if (documents.length === 0) {
 		return (
 			<EmptyState

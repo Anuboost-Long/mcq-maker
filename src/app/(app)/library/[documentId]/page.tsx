@@ -28,7 +28,7 @@ function sectionsOf(questions: ParsedQuestion[]) {
 async function Preview({ params }: Readonly<Pick<PageProps<'/library/[documentId]'>, 'params'>>) {
 	await connection();
 	const { documentId } = await params;
-	const doc = findDocument(documentId);
+	const doc = await findDocument(documentId);
 	if (!doc) notFound();
 
 	const ready = doc.questions.filter((q) => q.status === 'ready').length;

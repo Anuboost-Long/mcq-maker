@@ -13,7 +13,7 @@ import { t } from '@/lib/i18n';
 async function Player({ params }: Readonly<Pick<PageProps<'/quiz/[sessionId]'>, 'params'>>) {
 	await connection();
 	const { sessionId } = await params;
-	const session = findSession(sessionId);
+	const session = await findSession(sessionId);
 	if (!session) notFound();
 	if (session.submittedAt) redirect(`/quiz/${sessionId}/results`);
 

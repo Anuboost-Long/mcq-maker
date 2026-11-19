@@ -22,7 +22,7 @@ import { t } from '@/lib/i18n';
 
 async function DashboardContent() {
 	await connection();
-	const sessions = listSessions();
+	const sessions = await listSessions();
 	const open = sessions.find((s) => !s.submittedAt);
 	const finished = sessions.filter((s) => s.submittedAt);
 	const stats = summarize(sessions);

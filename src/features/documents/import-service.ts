@@ -24,7 +24,7 @@ export async function importDocument(filename: string, buffer: Buffer): Promise<
 		return { ok: false, error: 'invalid_file' };
 
 	const checksum = createHash('sha256').update(buffer).digest('hex');
-	const existing = findDocumentByChecksum(checksum);
+	const existing = await findDocumentByChecksum(checksum);
 	const summarize = (doc: NonNullable<typeof existing>, duplicate: boolean): ImportResult => {
 		const ready = doc.questions.filter((q) => q.status === 'ready').length;
 		return {

@@ -57,5 +57,5 @@ export type ImportResult =
 	| { ok: true; id: string; duplicate: boolean; total: number; ready: number; needsReview: number }
 	| {
 			ok: false;
-			error: 'unsupported' | 'too_large' | 'invalid_file' | 'no_questions' | 'unreadable';
+			error: 'unsupported' | 'too_large' | 'invalid_file' | 'no_questions' | 'unreadable' | 'failed';
 	  };

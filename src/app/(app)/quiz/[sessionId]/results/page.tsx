@@ -30,12 +30,12 @@ async function Results({
 }: Readonly<Pick<PageProps<'/quiz/[sessionId]/results'>, 'params'>>) {
 	await connection();
 	const { sessionId } = await params;
-	const session = findSession(sessionId);
+	const session = await findSession(sessionId);
 	if (!session) notFound();
 	if (!session.submittedAt) redirect(`/quiz/${sessionId}`);
 
 	const grade = gradeSession(session);
-	const earlier = listSessions().find(
+	const earlier = (await listSessions()).find(
 		(other) =>
 			other.id !== session.id && other.submittedAt && other.submittedAt < session.submittedAt!
 	);

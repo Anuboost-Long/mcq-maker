@@ -13,7 +13,7 @@ import { t } from '@/lib/i18n';
 
 async function Bank() {
 	await connection();
-	const questions = getBank();
+	const questions = await getBank();
 	if (questions.length === 0) {
 		return (
 			<EmptyState
@@ -29,7 +29,7 @@ async function Bank() {
 			/>
 		);
 	}
-	return <QuestionBrowser questions={questions} documents={publishedDocuments()} />;
+	return <QuestionBrowser questions={questions} documents={await publishedDocuments()} />;
 }
 
 export default function QuestionsPage() {

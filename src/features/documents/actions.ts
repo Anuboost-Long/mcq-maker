@@ -13,7 +13,7 @@ import {
 } from './store';
 
 export async function publishDocument(id: string) {
-	const doc = findDocument(id);
+	const doc = await findDocument(id);
 	if (!doc) throw new Error('Document not found');
 	if (!doc.questions.some((q) => q.status === 'ready')) throw new Error('Nothing to publish');
 	await saveDocument({ ...doc, status: 'published' });
@@ -21,7 +21,7 @@ export async function publishDocument(id: string) {
 }
 
 export async function unpublishDocument(id: string) {
-	const doc = findDocument(id);
+	const doc = await findDocument(id);
 	if (!doc) throw new Error('Document not found');
 	await saveDocument({ ...doc, status: 'draft' });
 	revalidatePath('/', 'layout');
@@ -34,7 +34,7 @@ export async function deleteDocument(id: string) {
 }
 
 export async function renameDocument(id: string, title: string) {
-	const doc = findDocument(id);
+	const doc = await findDocument(id);
 	const name = title.trim().slice(0, 120);
 	if (!doc || !name) throw new Error('Invalid name');
 	await saveDocument({ ...doc, title: name });

@@ -26,10 +26,12 @@ export function FileDropzone() {
 		try {
 			const { data } = await axios.post<ImportResult>('/api/documents', body, {
 				validateStatus: () => true,
+				timeout: 60_000,
 				onUploadProgress: ({ progress = 0 }) =>
 					patch(file.name, { percent: Math.round(progress * 100) })
 			});
-			patch(file.name, { percent: 100, result: data });
+			const valid = typeof data === 'object' && data !== null && 'ok' in data;
+			patch(file.name, { percent: 100, result: valid ? data : 'failed' });
 		} catch {
 			patch(file.name, { result: 'failed' });
 		}

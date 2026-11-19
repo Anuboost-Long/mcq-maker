@@ -13,7 +13,7 @@ import { t } from '@/lib/i18n';
 
 async function Setup() {
 	await connection();
-	const documents = publishedDocuments();
+	const documents = await publishedDocuments();
 	if (documents.length === 0) {
 		return (
 			<EmptyState
@@ -29,7 +29,7 @@ async function Setup() {
 			/>
 		);
 	}
-	const pool = getBank().map(({ documentId, difficulty }) => ({ documentId, difficulty }));
+	const pool = (await getBank()).map(({ documentId, difficulty }) => ({ documentId, difficulty }));
 	return (
 		<div className="max-w-xl">
 			<QuizSetupForm documents={documents} pool={pool} />
