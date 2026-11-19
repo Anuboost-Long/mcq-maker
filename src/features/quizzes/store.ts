@@ -53,3 +53,23 @@ export async function listSessions() {
 	const settled = await Promise.all(sessions.map(settle));
 	return settled.sort((a, b) => b.startedAt - a.startedAt);
 }
+
+export async function deleteSessions(ids: readonly string[]) {
+	if (ids.length === 0) return;
+	const redis = sharedStore();
+	if (!redis) {
+		for (const id of ids) local().delete(id);
+		return;
+	}
+	await Promise.all([redis.del(...ids.map(keyOf)), redis.zrem(INDEX, ...ids)]);
+}
+
+export async function clearSessions() {
+	const redis = sharedStore();
+	if (!redis) {
+		local().clear();
+		return;
+	}
+	await deleteSessions(await redis.zrange<string[]>(INDEX, 0, -1));
+	await redis.del(INDEX);
+}

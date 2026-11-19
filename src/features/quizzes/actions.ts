@@ -1,12 +1,13 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
 import { getBank } from '@/features/documents/store';
 
 import { createSession, restartSession } from './session';
-import { findSession, saveSession } from './store';
+import { clearSessions, deleteSessions, findSession, saveSession } from './store';
 import { deadlineOf } from './timing';
 
 const timingSchema = z.discriminatedUnion('kind', [
@@ -106,4 +107,16 @@ export async function retryQuiz(sessionId: unknown, only: unknown) {
 	if (retry.questions.length === 0) return { error: 'nothingToRetry' as const };
 	await saveSession(retry);
 	redirect(`/quiz/${retry.id}`);
+}
+
+const idsSchema = z.array(z.string().uuid()).max(500);
+
+export async function deleteQuizzes(ids: unknown) {
+	await deleteSessions(await idsSchema.parseAsync(ids));
+	revalidatePath('/', 'layout');
+}
+
+export async function clearAllQuizzes() {
+	await clearSessions();
+	revalidatePath('/', 'layout');
 }
