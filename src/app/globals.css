@@ -1,26 +1,134 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+	--canvas: #fbfbfa;
+	--surface: #ffffff;
+	--sunken: #f4f3f0;
+	--line: #e7e5e1;
+	--ink: #1f2326;
+	--muted: #787774;
+	--good: #edf3ec;
+	--good-ink: #346538;
+	--bad: #fdebec;
+	--bad-ink: #9f2f2d;
+	--warn: #fbf3db;
+	--warn-ink: #956400;
+	--accent: #2f6f5e;
+	--accent-soft: #e7f0ec;
+	color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+	:root {
+		--canvas: #141413;
+		--surface: #1b1b1a;
+		--sunken: #232321;
+		--line: #2e2e2b;
+		--ink: #ecebe8;
+		--muted: #8f8d87;
+		--good: #1f2b20;
+		--good-ink: #8fc392;
+		--bad: #321c1c;
+		--bad-ink: #e68e8b;
+		--warn: #2e2715;
+		--warn-ink: #dcb25c;
+		--accent: #86c2ae;
+		--accent-soft: #1d2b26;
+		color-scheme: dark;
+	}
+}
+
+@theme inline {
+	--color-canvas: var(--canvas);
+	--color-surface: var(--surface);
+	--color-sunken: var(--sunken);
+	--color-line: var(--line);
+	--color-ink: var(--ink);
+	--color-muted: var(--muted);
+	--color-good: var(--good);
+	--color-good-ink: var(--good-ink);
+	--color-bad: var(--bad);
+	--color-bad-ink: var(--bad-ink);
+	--color-warn: var(--warn);
+	--color-warn-ink: var(--warn-ink);
+	--color-accent: var(--accent);
+	--color-accent-soft: var(--accent-soft);
+	--animate-fill: fill 1.5s ease-out forwards;
+	--animate-pop: pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+	--font-sans: var(--font-geist-sans);
+	--font-mono: var(--font-geist-mono);
+	--font-serif: var(--font-newsreader);
+}
+
+html {
+	overscroll-behavior-y: none;
+	-webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+	overflow-x: clip;
+	-webkit-tap-highlight-color: transparent;
+	background: var(--canvas);
+	color: var(--ink);
+	font-family: var(--font-geist-sans), system-ui, sans-serif;
+	line-height: 1.6;
+}
+
+:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		transition-duration: 0.01ms !important;
+		animation-duration: 0.01ms !important;
+	}
+}
+
+@keyframes fill {
+	from {
+		transform: scaleX(0);
+	}
+	to {
+		transform: scaleX(1);
+	}
+}
+
+@keyframes pop {
+	from {
+		opacity: 0;
+		transform: scale(0.6);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+::view-transition-old(.page-out) {
+	animation: 140ms ease-in both page-fade reverse;
+}
+
+::view-transition-new(.page-in) {
+	animation: 240ms ease-out 100ms both page-fade;
+}
+
+@keyframes page-fade {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
 }
