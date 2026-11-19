@@ -9,11 +9,12 @@ import { toPlayerQuestion } from '@/features/quizzes/player';
 import { findSession } from '@/features/quizzes/store';
 import { nowMs } from '@/features/quizzes/timing';
 import { t } from '@/lib/i18n';
+import { currentDeviceId } from '@/lib/device';
 
 async function Player({ params }: Readonly<Pick<PageProps<'/quiz/[sessionId]'>, 'params'>>) {
 	await connection();
 	const { sessionId } = await params;
-	const session = await findSession(sessionId);
+	const session = await findSession(await currentDeviceId(), sessionId);
 	if (!session) notFound();
 	if (session.submittedAt) redirect(`/quiz/${sessionId}/results`);
 

@@ -14,6 +14,7 @@ import { deleteQuestions } from '@/features/documents/actions';
 import { findDocument } from '@/features/documents/store';
 import type { ParsedQuestion } from '@/features/documents/types';
 import { t } from '@/lib/i18n';
+import { currentDeviceId } from '@/lib/device';
 
 function sectionsOf(questions: ParsedQuestion[]) {
 	const sections: { name: string; questions: ParsedQuestion[] }[] = [];
@@ -28,7 +29,7 @@ function sectionsOf(questions: ParsedQuestion[]) {
 async function Preview({ params }: Readonly<Pick<PageProps<'/library/[documentId]'>, 'params'>>) {
 	await connection();
 	const { documentId } = await params;
-	const doc = await findDocument(documentId);
+	const doc = await findDocument(await currentDeviceId(), documentId);
 	if (!doc) notFound();
 
 	const ready = doc.questions.filter((q) => q.status === 'ready').length;

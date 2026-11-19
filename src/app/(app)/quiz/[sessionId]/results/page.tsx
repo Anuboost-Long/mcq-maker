@@ -18,6 +18,7 @@ import { answerStatus, gradeSession } from '@/features/quizzes/grading';
 import { topicRates } from '@/features/quizzes/stats';
 import { findSession, listSessions } from '@/features/quizzes/store';
 import { t } from '@/lib/i18n';
+import { currentDeviceId } from '@/lib/device';
 
 const statusStyle = {
 	correct: { tone: 'good', icon: CheckCircleIcon },
@@ -30,12 +31,13 @@ async function Results({
 }: Readonly<Pick<PageProps<'/quiz/[sessionId]/results'>, 'params'>>) {
 	await connection();
 	const { sessionId } = await params;
-	const session = await findSession(sessionId);
+	const deviceId = await currentDeviceId();
+	const session = await findSession(deviceId, sessionId);
 	if (!session) notFound();
 	if (!session.submittedAt) redirect(`/quiz/${sessionId}`);
 
 	const grade = gradeSession(session);
-	const earlier = (await listSessions()).find(
+	const earlier = (await listSessions(deviceId)).find(
 		(other) =>
 			other.id !== session.id && other.submittedAt && other.submittedAt < session.submittedAt!
 	);

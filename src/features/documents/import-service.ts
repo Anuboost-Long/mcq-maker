@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 
 import { extractBlocks } from './extractors';
 import { parseMcqs } from './mcq-parser/parse';
-import { findDocumentByChecksum, saveDocument } from './store';
+import { findDocumentByChecksum, insertDocument } from './store';
 import type { ImportResult } from './types';
 
 const maxBytes = 10 * 1024 * 1024;
@@ -15,7 +15,11 @@ const titleOf = (filename: string) =>
 		.replace(/[_\s]+/g, ' ')
 		.trim();
 
-export async function importDocument(filename: string, buffer: Buffer): Promise<ImportResult> {
+export async function importDocument(
+	deviceId: string,
+	filename: string,
+	buffer: Buffer
+): Promise<ImportResult> {
 	const format = /\.(docx|pdf)$/i.exec(filename)?.[1].toLowerCase() as
 		keyof typeof signatures | undefined;
 	if (!format) return { ok: false, error: 'unsupported' };
@@ -24,18 +28,19 @@ export async function importDocument(filename: string, buffer: Buffer): Promise<
 		return { ok: false, error: 'invalid_file' };
 
 	const checksum = createHash('sha256').update(buffer).digest('hex');
-	const existing = await findDocumentByChecksum(checksum);
-	const summarize = (doc: NonNullable<typeof existing>, duplicate: boolean): ImportResult => {
-		const ready = doc.questions.filter((q) => q.status === 'ready').length;
-		return {
-			ok: true,
-			id: doc.id,
-			duplicate,
-			total: doc.questions.length,
-			ready,
-			needsReview: doc.questions.length - ready
-		};
-	};
+	const summarize = (
+		doc: { id: string; total: number; ready: number },
+		duplicate: boolean
+	): ImportResult => ({
+		ok: true,
+		id: doc.id,
+		duplicate,
+		total: doc.total,
+		ready: doc.ready,
+		needsReview: doc.total - doc.ready
+	});
+
+	const existing = await findDocumentByChecksum(deviceId, checksum);
 	if (existing) return summarize(existing, true);
 
 	let parsed;
@@ -46,15 +51,18 @@ export async function importDocument(filename: string, buffer: Buffer): Promise<
 	}
 	if (parsed.questions.length === 0) return { ok: false, error: 'no_questions' };
 
-	const doc = {
-		id: `doc-${checksum.slice(0, 12)}`,
-		filename,
-		title: titleOf(filename),
-		checksum,
-		uploadedAt: Date.now(),
-		status: 'draft' as const,
-		...parsed
-	};
-	await saveDocument(doc);
-	return summarize(doc, false);
+	try {
+		const id = await insertDocument(deviceId, {
+			filename,
+			title: titleOf(filename),
+			checksum,
+			...parsed
+		});
+		const ready = parsed.questions.filter((q) => q.status === 'ready').length;
+		return summarize({ id, total: parsed.questions.length, ready }, false);
+	} catch (error) {
+		const raced = await findDocumentByChecksum(deviceId, checksum);
+		if (raced) return summarize(raced, true);
+		throw error;
+	}
 }

@@ -19,10 +19,11 @@ import { summarize } from '@/features/quizzes/stats';
 import { listSessions } from '@/features/quizzes/store';
 import { formatPercent } from '@/lib/format';
 import { t } from '@/lib/i18n';
+import { currentDeviceId } from '@/lib/device';
 
 async function DashboardContent() {
 	await connection();
-	const sessions = await listSessions();
+	const sessions = await listSessions(await currentDeviceId());
 	const open = sessions.find((s) => !s.submittedAt);
 	const finished = sessions.filter((s) => s.submittedAt);
 	const stats = summarize(sessions);

@@ -10,10 +10,12 @@ import { Loading } from '@/components/ui/Loading';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { getBank, publishedDocuments } from '@/features/documents/store';
 import { t } from '@/lib/i18n';
+import { currentDeviceId } from '@/lib/device';
 
 async function Setup() {
 	await connection();
-	const documents = await publishedDocuments();
+	const deviceId = await currentDeviceId();
+	const documents = await publishedDocuments(deviceId);
 	if (documents.length === 0) {
 		return (
 			<EmptyState
@@ -29,7 +31,7 @@ async function Setup() {
 			/>
 		);
 	}
-	const pool = (await getBank()).map(({ documentId, difficulty }) => ({ documentId, difficulty }));
+	const pool = (await getBank(deviceId)).map(({ documentId, difficulty }) => ({ documentId, difficulty }));
 	return (
 		<div className="max-w-xl">
 			<QuizSetupForm documents={documents} pool={pool} />

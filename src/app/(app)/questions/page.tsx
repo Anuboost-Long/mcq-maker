@@ -10,10 +10,12 @@ import { Loading } from '@/components/ui/Loading';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { getBank, publishedDocuments } from '@/features/documents/store';
 import { t } from '@/lib/i18n';
+import { currentDeviceId } from '@/lib/device';
 
 async function Bank() {
 	await connection();
-	const questions = await getBank();
+	const deviceId = await currentDeviceId();
+	const questions = await getBank(deviceId);
 	if (questions.length === 0) {
 		return (
 			<EmptyState
@@ -29,7 +31,7 @@ async function Bank() {
 			/>
 		);
 	}
-	return <QuestionBrowser questions={questions} documents={await publishedDocuments()} />;
+	return <QuestionBrowser questions={questions} documents={await publishedDocuments(deviceId)} />;
 }
 
 export default function QuestionsPage() {

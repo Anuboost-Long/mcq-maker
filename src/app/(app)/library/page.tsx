@@ -18,10 +18,11 @@ import { Tag } from '@/components/ui/Tag';
 import { deleteDocuments } from '@/features/documents/actions';
 import { listDocuments } from '@/features/documents/store';
 import { t } from '@/lib/i18n';
+import { currentDeviceId } from '@/lib/device';
 
 async function Documents() {
 	await connection();
-	const documents = await listDocuments();
+	const documents = await listDocuments(await currentDeviceId());
 	if (documents.length === 0) {
 		return (
 			<EmptyState
