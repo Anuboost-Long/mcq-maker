@@ -1,9 +1,13 @@
-import type { Session, Timing } from './types';
+import type { Session } from './types';
 
-export function deadlineOf({ config, startedAt }: Pick<Session, "config" | "startedAt">) {
-  // Sessions created before timers existed have no timing.
-  const timing = config.timing as Timing | undefined;
-  return timing?.kind === "countdown" ? startedAt + timing.minutes * 60_000 : null;
+export function deadlineOf({ config, startedAt }: Pick<Session, 'config' | 'startedAt'>) {
+	return config.timing.kind === 'countdown' ? startedAt + config.timing.minutes * 60_000 : null;
+}
+
+export function withTiming(session: Session) {
+	// Sessions created before timers existed have no timing.
+	(session.config as Partial<Session['config']>).timing ??= { kind: 'none' };
+	return session;
 }
 
 export function expireIfDue(session: Session, now: number = Date.now()) {

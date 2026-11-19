@@ -76,11 +76,14 @@ export const en = {
 		selectAll: 'Select all',
 		selectedCount: '{{count}} selected',
 		deleteSelected: 'Delete selected',
-		deleteSelectedConfirm: "Delete {{count}} questions? This can't be undone.",
+		deleteSelectedConfirm_one: "Delete this question? This can't be undone.",
+		deleteSelectedConfirm_other: "Delete {{count}} questions? This can't be undone.",
 		clearSelection: 'Clear selection',
 		selectQuestion: 'Select question {{number}}',
 		selectDocument: 'Select {{title}}',
-		deleteSelectedDocumentsConfirm:
+		deleteSelectedDocumentsConfirm_one:
+			"Delete this document and all its questions? This can't be undone.",
+		deleteSelectedDocumentsConfirm_other:
 			"Delete {{count}} documents and all their questions? This can't be undone.",
 		deleteQuestionConfirm: "Delete this question? This can't be undone.",
 		confirmDelete: 'Yes, delete'

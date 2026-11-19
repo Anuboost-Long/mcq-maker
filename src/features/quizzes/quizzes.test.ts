@@ -6,7 +6,7 @@ import { toPlayerQuestion } from './player';
 import { eligibleQuestions, selectQuestions } from './selection';
 import { createSession, restartSession } from './session';
 import { shuffle } from './shuffle';
-import { deadlineOf, expireIfDue } from './timing';
+import { deadlineOf, expireIfDue, withTiming } from './timing';
 import type { QuizConfig } from './types';
 
 const allDocs = ['doc-physiology', 'doc-structures'];
@@ -126,5 +126,12 @@ describe('timing', () => {
 		const session = createSession(fixtureQuestions, { ...config, timing: { kind: 'stopwatch' } });
 		expireIfDue(session, session.startedAt + 10 * 3_600_000);
 		expect(session.submittedAt).toBeNull();
+	});
+
+	it('treats a session saved before timers existed as untimed', () => {
+		const legacy = createSession(fixtureQuestions, config);
+		delete (legacy.config as Partial<QuizConfig>).timing;
+		expect(withTiming(legacy).config.timing).toEqual({ kind: 'none' });
+		expect(expireIfDue(legacy, legacy.startedAt + 3_600_000).submittedAt).toBeNull();
 	});
 });

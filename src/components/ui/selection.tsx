@@ -1,12 +1,12 @@
 'use client';
 
-import { XIcon } from '@phosphor-icons/react/ssr';
+import { TrashIcon, XIcon } from '@phosphor-icons/react/ssr';
 import clsx from 'clsx';
-import { createContext, type ReactNode, useContext, useMemo, useState } from 'react';
+import { createContext, type ReactNode, useContext, useMemo, useState, useTransition } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { Button } from './Button';
 import { Checkbox } from './Checkbox';
-import { ConfirmDelete } from './ConfirmDelete';
 
 type SelectionState = {
 	keys: string[];
@@ -63,50 +63,87 @@ export function SelectionToolbar({
 }: Readonly<SelectionToolbarProp>) {
 	const { t } = useTranslation();
 	const { keys, selected, toggleAll, clear } = useSelection();
+	const [confirming, setConfirming] = useState(false);
+	const [pending, start] = useTransition();
 	const count = selected.length;
+	const asking = confirming && count > 0;
+
+	const finish = () => {
+		setConfirming(false);
+		clear();
+	};
 
 	return (
 		<div
 			className={clsx(
-				'sticky top-14 z-10 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border px-2 py-1.5',
+				'sticky top-14 z-10 rounded-lg border px-2 py-1.5',
 				count > 0 ? 'border-accent bg-accent-soft' : 'border-line bg-surface',
 				className
 			)}
 		>
-			<label className="flex min-h-10 cursor-pointer items-center gap-1 text-sm font-medium">
-				<Checkbox
-					checked={keys.length > 0 && count === keys.length}
-					indeterminate={count > 0 && count < keys.length}
-					label={t('document.selectAll')}
-					onChange={toggleAll}
-				/>
-				{t('document.selectAll')}
-			</label>
-			{count > 0 && (
-				<>
-					<span className="text-sm text-muted" aria-live="polite">
-						{t('document.selectedCount', { count })}
-					</span>
-					<div className="ml-auto flex flex-wrap items-center gap-2">
-						<ConfirmDelete
-							label={t('document.deleteSelected')}
-							message={t(confirmKey, { count })}
-							onConfirm={async () => {
+			<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+				<label className="flex min-h-10 cursor-pointer items-center gap-1 text-sm font-medium">
+					<Checkbox
+						checked={keys.length > 0 && count === keys.length}
+						indeterminate={count > 0 && count < keys.length}
+						label={t('document.selectAll')}
+						onChange={toggleAll}
+					/>
+					{t('document.selectAll')}
+				</label>
+				{count > 0 && (
+					<>
+						<span className="text-sm text-muted" aria-live="polite">
+							{t('document.selectedCount', { count })}
+						</span>
+						<div className="ml-auto flex items-center gap-1">
+							<Button
+								variant="dangerQuiet"
+								icon={TrashIcon}
+								label={t('document.deleteSelected')}
+								iconOnlyOnMobile
+								aria-expanded={asking}
+								onClick={() => setConfirming((open) => !open)}
+							/>
+							<button
+								type="button"
+								aria-label={t('document.clearSelection')}
+								title={t('document.clearSelection')}
+								onClick={finish}
+								className="grid size-10 shrink-0 place-items-center rounded-md text-muted transition-colors hover:bg-sunken hover:text-ink"
+							>
+								<XIcon weight="bold" size={18} aria-hidden />
+							</button>
+						</div>
+					</>
+				)}
+			</div>
+
+			{asking && (
+				<div
+					role="alert"
+					className="mt-1.5 mb-1 flex flex-wrap items-center gap-2 rounded-md bg-bad p-3 text-bad-ink"
+				>
+					<p className="w-full text-sm sm:w-auto sm:flex-1">{t(confirmKey, { count })}</p>
+					<Button
+						variant="danger"
+						icon={TrashIcon}
+						label={t('document.confirmDelete')}
+						loading={pending}
+						onClick={() =>
+							start(async () => {
 								await deleteSelected(selected);
-								clear();
-							}}
-						/>
-						<button
-							type="button"
-							aria-label={t('document.clearSelection')}
-							title={t('document.clearSelection')}
-							onClick={clear}
-							className="grid size-10 place-items-center rounded-md text-muted transition-colors hover:bg-sunken hover:text-ink"
-						>
-							<XIcon weight="bold" size={18} aria-hidden />
-						</button>
-					</div>
-				</>
+								finish();
+							})
+						}
+					/>
+					<Button
+						variant="quiet"
+						icon={XIcon}
+						label={t('document.cancel')}
+						onClick={() => setConfirming(false)}
+					/>
+				</div>
 			)}
 		</div>
 	);
