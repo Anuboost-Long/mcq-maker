@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
@@ -8,6 +9,8 @@ import { currentDeviceId } from '@/lib/device';
 
 import { createSession, restartSession } from './session';
 import {
+	clearSessions,
+	deleteSessions,
 	findSession,
 	insertSession,
 	submitSession,
@@ -107,4 +110,17 @@ export async function retryQuiz(sessionId: unknown, only: unknown) {
 	if (retry.questions.length === 0) return { error: 'nothingToRetry' as const };
 	await insertSession(deviceId, retry);
 	redirect(`/quiz/${retry.id}`);
+}
+
+const idsSchema = z.array(z.string().uuid()).max(500);
+
+export async function deleteQuizzes(ids: unknown) {
+	const deviceId = await currentDeviceId();
+	await deleteSessions(deviceId, await idsSchema.parseAsync(ids));
+	revalidatePath('/', 'layout');
+}
+
+export async function clearAllQuizzes() {
+	await clearSessions(await currentDeviceId());
+	revalidatePath('/', 'layout');
 }

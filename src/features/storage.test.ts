@@ -14,12 +14,15 @@ import {
 } from "@/features/documents/store";
 import { createSession } from "./quizzes/session";
 import {
+  clearSessions,
+  deleteSessions,
   findSession,
   insertSession,
   listSessions,
   submitSession,
   updateSessionQuestion,
 } from "./quizzes/store";
+import { sql } from "@/lib/db";
 import type { QuizConfig } from "./quizzes/types";
 
 const lines = (n: number) => [
@@ -216,5 +219,50 @@ describe("quiz sessions", () => {
     await insertSession(device, newer);
 
     expect((await listSessions(device)).map((s) => s.id)).toEqual([newer.id, older.id]);
+  });
+});
+
+describe("clearing quiz history", () => {
+  const countRows = async (sessionId: string) =>
+    (await sql()<{ n: number }[]>`select count(*)::int as n from quiz_session_questions where session_id = ${sessionId}`)[0].n;
+
+  it("deletes only the chosen attempts, with their questions", async () => {
+    const device = randomUUID();
+    const keep = await sessionFor(device);
+    const drop = createSession(await getBank(device), { ...config, documentIds: keep.config.documentIds });
+    await insertSession(device, keep);
+    await insertSession(device, drop);
+
+    await deleteSessions(device, [drop.id]);
+
+    expect(await findSession(device, drop.id)).toBeUndefined();
+    expect(await countRows(drop.id)).toBe(0);
+    expect((await findSession(device, keep.id))?.questions).toHaveLength(3);
+  });
+
+  it("cannot delete another device's attempts", async () => {
+    const owner = randomUUID();
+    const stranger = randomUUID();
+    const session = await sessionFor(owner);
+    await insertSession(owner, session);
+
+    await deleteSessions(stranger, [session.id]);
+    await clearSessions(stranger);
+
+    expect(await findSession(owner, session.id)).toBeDefined();
+    expect(await countRows(session.id)).toBe(3);
+  });
+
+  it("clears everything for one device and leaves others alone", async () => {
+    const a = randomUUID();
+    const b = randomUUID();
+    await insertSession(a, await sessionFor(a));
+    await insertSession(a, await sessionFor(a));
+    await insertSession(b, await sessionFor(b));
+
+    await clearSessions(a);
+
+    expect(await listSessions(a)).toEqual([]);
+    expect(await listSessions(b)).toHaveLength(1);
   });
 });

@@ -10,22 +10,25 @@ import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
 
+import { ClearHistoryButton, DiscardQuizButton } from '@/components/quiz/HistoryButtons';
 import { buttonClass } from '@/components/ui/button-variants';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loading } from '@/components/ui/Loading';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { SelectableRow, SelectionProvider, SelectionToolbar } from '@/components/ui/selection';
+import { Tag } from '@/components/ui/Tag';
+import { deleteQuizzes } from '@/features/quizzes/actions';
 import { gradeSession } from '@/features/quizzes/grading';
 import { summarize } from '@/features/quizzes/stats';
 import { listSessions } from '@/features/quizzes/store';
+import { currentDeviceId } from '@/lib/device';
 import { formatPercent } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import { currentDeviceId } from '@/lib/device';
 
 async function DashboardContent() {
 	await connection();
 	const sessions = await listSessions(await currentDeviceId());
 	const open = sessions.find((s) => !s.submittedAt);
-	const finished = sessions.filter((s) => s.submittedAt);
 	const stats = summarize(sessions);
 
 	if (sessions.length === 0) {
@@ -54,29 +57,29 @@ async function DashboardContent() {
 	return (
 		<div className="space-y-10">
 			{open && (
-				<Link
-					href={`/quiz/${open.id}`}
-					className="group flex items-center gap-4 rounded-lg border border-accent bg-accent-soft px-5 py-4"
-				>
-					<span className="grid size-10 shrink-0 place-items-center rounded-md bg-canvas text-accent">
-						<PlayCircleIcon weight="fill" size={22} aria-hidden />
-					</span>
-					<span className="min-w-0 flex-1">
-						<span className="block font-medium">{t('dashboard.continue')}</span>
-						<span className="text-sm text-muted">
-							{t('dashboard.continueHint', {
-								answered: answeredInOpen,
-								total: open.questions.length
-							})}
+				<div className="flex flex-wrap items-center gap-3 rounded-lg border border-accent bg-accent-soft py-3 pl-5 pr-3">
+					<Link href={`/quiz/${open.id}`} className="group flex min-w-0 flex-1 items-center gap-4">
+						<span className="grid size-10 shrink-0 place-items-center rounded-md bg-canvas text-accent">
+							<PlayCircleIcon weight="fill" size={22} aria-hidden />
 						</span>
-					</span>
-					<ArrowRightIcon
-						weight="bold"
-						size={18}
-						aria-hidden
-						className="transition-transform group-hover:translate-x-0.5"
-					/>
-				</Link>
+						<span className="min-w-0 flex-1">
+							<span className="block font-medium">{t('dashboard.continue')}</span>
+							<span className="text-sm text-muted">
+								{t('dashboard.continueHint', {
+									answered: answeredInOpen,
+									total: open.questions.length
+								})}
+							</span>
+						</span>
+						<ArrowRightIcon
+							weight="bold"
+							size={18}
+							aria-hidden
+							className="transition-transform group-hover:translate-x-0.5"
+						/>
+					</Link>
+					<DiscardQuizButton key={open.id} id={open.id} />
+				</div>
 			)}
 
 			<dl className="grid grid-cols-3 divide-x divide-line overflow-hidden rounded-lg border border-line bg-surface">
@@ -114,33 +117,56 @@ async function DashboardContent() {
 				)}
 			</section>
 
-			{finished.length > 0 && (
-				<section>
-					<h2 className="mb-3 font-serif text-xl">{t('dashboard.recent')}</h2>
+			<section>
+				<div className="mb-3 flex items-center justify-between gap-3">
+					<h2 className="font-serif text-xl">{t('dashboard.recent')}</h2>
+					<ClearHistoryButton count={sessions.length} />
+				</div>
+				<SelectionProvider keys={sessions.map((session) => session.id)}>
+					<SelectionToolbar
+						deleteSelected={deleteQuizzes}
+						confirmKey="dashboard.deleteSelectedConfirm"
+						className="mb-3"
+					/>
 					<ul className="divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface">
-						{finished.slice(0, 5).map((session) => {
+						{sessions.map((session) => {
 							const grade = gradeSession(session);
+							const date = new Date(session.startedAt).toLocaleString();
 							return (
-								<li key={session.id}>
+								<SelectableRow
+									key={session.id}
+									itemKey={session.id}
+									label={t('dashboard.selectQuiz', { date })}
+									centered
+									className="px-4 py-3"
+								>
 									<Link
-										href={`/quiz/${session.id}/results`}
-										className="group flex items-center gap-3 px-4 py-3 hover:bg-sunken"
+										href={
+											session.submittedAt ? `/quiz/${session.id}/results` : `/quiz/${session.id}`
+										}
+										className="group flex items-center gap-3"
 									>
 										<span className="min-w-0 flex-1">
-											<span className="block">{new Date(session.startedAt).toLocaleString()}</span>
+											<span className="block">{date}</span>
 											<span className="text-sm text-muted">
-												{grade.correct}/{grade.total}
+												{session.submittedAt
+													? `${grade.correct}/${grade.total}`
+													: t('common.questions', { count: session.questions.length })}
 											</span>
 										</span>
-										<span className="font-serif text-xl">{formatPercent(grade.percentage)}</span>
+										{session.submittedAt ? (
+											<span className="font-serif text-xl">{formatPercent(grade.percentage)}</span>
+										) : (
+											<Tag tone="warn">{t('dashboard.inProgress')}</Tag>
+										)}
 										<CaretRightIcon weight="bold" size={16} aria-hidden className="text-muted" />
 									</Link>
-								</li>
+								</SelectableRow>
 							);
 						})}
 					</ul>
-				</section>
-			)}
+				</SelectionProvider>
+			</section>
 		</div>
 	);
 }
